@@ -43,7 +43,7 @@ fun SolApp() {
     var screen by remember { mutableStateOf("chat") }
     var apiKey by remember { mutableStateOf("") }
     var falKey by remember { mutableStateOf("") }
-    var model by remember { mutableStateOf("gpt-4o-mini") }
+    var model by remember { mutableStateOf("gpt-6-astra") }
     var input by remember { mutableStateOf("") }
     var busy by remember { mutableStateOf(false) }
     var status by remember { mutableStateOf("Готов к работе") }
@@ -94,7 +94,7 @@ fun SolApp() {
                     item { Text("Настройки SOL AI", fontSize=24.sp, fontWeight=FontWeight.Bold) }
                     item { Text("AI-чат · OpenAI-совместимый API", color=Muted) }
                     item { OutlinedTextField(apiKey,{apiKey=it}, modifier=Modifier.fillMaxWidth(), label={Text("API-ключ чата")}, visualTransformation=PasswordVisualTransformation()) }
-                    item { OutlinedTextField(model,{model=it}, modifier=Modifier.fillMaxWidth(), label={Text("Модель")}) }
+                    item { OutlinedTextField(model,{model=it}, modifier=Modifier.fillMaxWidth(), label={Text("Модель (GPT-6)")}) }
                     item { Divider(color=Color(0xFF303849)) }
                     item { Text("Изображения и видео · fal.ai", color=Muted) }
                     item { OutlinedTextField(falKey,{falKey=it}, modifier=Modifier.fillMaxWidth(), label={Text("Ключ fal.ai")}, visualTransformation=PasswordVisualTransformation()) }
