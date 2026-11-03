@@ -128,23 +128,59 @@ fun SolApp() {
 object AiClient {
     suspend fun chat(key: String, model: String, history: List<ChatMessage>): String =
         kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            if(key.isBlank()) return@withContext "Добавь API-ключ в Настройки → API-ключ чата. Без ключа подключиться к модели невозможно."
+            if (key.isBlank()) return@withContext "Добавь API-ключ в Настройки → API-ключ чата."
+
             try {
                 val client = okhttp3.OkHttpClient()
-                val arr = org.json.JSONArray()
+                val input = org.json.JSONArray()
+
                 history.forEach { m ->
-                    arr.put(org.json.JSONObject().put("role", if(m.user) "user" else "assistant").put("content", m.text))
+                    input.put(
+                        org.json.JSONObject()
+                            .put("role", if (m.user) "user" else "assistant")
+                            .put("content", m.text)
+                    )
                 }
-                val body = org.json.JSONObject().put("model", model).put("messages", arr).put("temperature", 0.7)
-                val request = okhttp3.Request.Builder().url("https://api.openai.com/v1/chat/completions")
+
+                val body = org.json.JSONObject()
+                    .put("model", model)
+                    .put("input", input)
+
+                val request = okhttp3.Request.Builder()
+                    .url("https://api.openai.com/v1/responses")
                     .addHeader("Authorization", "Bearer $key")
                     .addHeader("Content-Type", "application/json")
-                    .post(body.toString().toRequestBody("application/json".toMediaType())).build()
+                    .post(body.toString().toRequestBody("application/json".toMediaType()))
+                    .build()
+
                 client.newCall(request).execute().use { response ->
-                    val raw=response.body?.string().orEmpty()
-                    if(!response.isSuccessful) "Ошибка API ${response.code}: $raw"
-                    else org.json.JSONObject(raw).getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content")
+                    val raw = response.body?.string().orEmpty()
+
+                    if (!response.isSuccessful) {
+                        "Ошибка API ${response.code}: $raw"
+                    } else {
+                        val json = org.json.JSONObject(raw)
+                        val output = json.getJSONArray("output")
+                        val result = StringBuilder()
+
+                        for (i in 0 until output.length()) {
+                            val item = output.getJSONObject(i)
+                            if (item.optString("type") == "message") {
+                                val content = item.optJSONArray("content") ?: continue
+                                for (j in 0 until content.length()) {
+                                    val part = content.getJSONObject(j)
+                                    if (part.optString("type") == "output_text") {
+                                        result.append(part.optString("text"))
+                                    }
+                                }
+                            }
+                        }
+
+                        result.toString().ifBlank { "Модель не вернула текстовый ответ." }
+                    }
                 }
-            } catch(e: Exception) { "Не удалось подключиться: ${e.message}" }
+            } catch (e: Exception) {
+                "Не удалось подключиться: ${e.message}"
+            }
         }
 }
